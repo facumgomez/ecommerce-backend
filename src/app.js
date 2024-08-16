@@ -1,5 +1,6 @@
 import express from 'express';
-import ProductManager from './productManager.js';
+import productsRouter from './routers/prducts.router.js';
+import cartsRouter from './routers/carts.router.js';
 
 const app = express();
 const PORT = 3000;
@@ -8,14 +9,11 @@ app.listen(PORT, () => {
   console.log(`Corriendo app en el puerto ${PORT}`);
 });
 
-app.get('/products', (req, res) => {
-  const { limit } = req.query;
-  const p = new ProductManager();
-  return res.json({ productos:p.getProducts(limit) });
-});
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.get('/products/:pid', (req, res) => {
-  const { pid } = req.params;
-  const p = new ProductManager();
-  return res.json({ producto: p.getProductById(Number(pid)) });
+app.get('/', (req, res) => {
+  return res.send('Ecommerce Backend');
 });
+app.use('/api/products', productsRouter);
+app.use('/api/carts', cartsRouter);

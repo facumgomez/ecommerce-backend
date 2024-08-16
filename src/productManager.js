@@ -35,28 +35,37 @@ class ProductManager {
     };
   };
 
-  addProduct(title, description, price, thumbnail, code, stock) {
-    if (!title || !description || !price || !thumbnail || !code || !stock)
-      return 'Todos los parametros son requeridos [title, description, price, thumbnail, code, stock]';
-
-    const codeRepeated = this.products.some(p => p.code == code);
-    if (codeRepeated)
-      return `Codigo ${code} registrado en otro producto`;
-      
-    ProductManager.idProduct = ProductManager.idProduct + 1
-    const id = this.assignProductId();
-    const newProduct = {
-      id,
-      title,
-      description,
-      price,
-      thumbnail,
-      code,
-      stock
+  addProduct(title, description, price, thumbnail, code, stock, category, status = true) {
+    let result = 'Ocurrio un error';
+    if (!title || !description || !price || !thumbnail || !code || !stock || !category) {
+      result = 'Todos los parametros son requeridos [title, description, price, thumbnail, code, stock, category]';
+    } else {
+      const codeRepeated = this.products.some(p => p.code == code);
+      if (codeRepeated) {
+        result = `Codigo ${code} registrado en otro producto`;
+      } else {
+        ProductManager.idProduct = ProductManager.idProduct + 1
+        const id = this.assignProductId();
+        const newProduct = {
+          id,
+          title,
+          description,
+          price,
+          thumbnail,
+          code,
+          stock,
+          category, 
+          status
+        };
+        this.products.push(newProduct);
+        this.saveFile();
+        result = {
+          msg: 'Producto agregado con exito!', 
+          producto: newProduct
+        };
+      };
     };
-    this.products.push(newProduct);
-    this.saveFile();
-    return 'Producto agregado con exito!';
+    return result;
   };
 
   getProducts(limit = 0) {
@@ -67,23 +76,34 @@ class ProductManager {
   };
 
   getProductById(id) {
+    let status = false;
+    let answer = `Producto ${id} no existe!`;
     const product = this.products.find(p => p.id == id);
-    if (product)
-      return product;
-    else 
-      return `Not Found del producto con id ${id}`;
+    if (product) {
+      status = true;
+      answer = product;
+    };
+    return {status, answer};
   };
 
   updateProduct(id, objectUpdate) {
-    let msg = `Producto ${id} no existe`;
+    let result = `Producto ${id} no existe`;
     const index = this.products.findIndex(p => p.id === id);
     if (index !== -1) {
       const {id, ...rest} = objectUpdate;
-      this.products[index] = {...this.products[index], ...rest};
+      const allowedProperties = ['title', 'description', 'price', 'thumbnail', 'code', 'stock', 'category', 'status'];
+      const updatedProperties = Object.keys(this.rest).filter(properties => allowedProperties.includes(properties)).reduce((obj, key) => {
+        obj[key] = rest[key];
+        return obj
+      }, {});
+      this.products[index] = {...this.products[index], ...updatedProperties};
       this.saveFile();
-      msg = '¡Producto actualizado!'
+      result = {
+        msg: '¡Producto actualizado!',
+        producto: this.products[index]
+      };
     };
-    return msg;
+    return result;
   };
 
   deleteProduct(id) {
