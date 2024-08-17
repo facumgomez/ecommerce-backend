@@ -3,11 +3,16 @@ import fs from 'fs';
 class ProductManager {
   products;
   path;
-  static idProduct = 0;
+  static instance;
   
   constructor() {
+    if (ProductManager.instance)
+      return ProductManager.instance;
+    
     this.path = './src/data/products.json';
     this.products = this.readProductsInFile();
+
+    ProductManager.instance = this;
   };
 
   assignProductId() {
@@ -35,23 +40,22 @@ class ProductManager {
     };
   };
 
-  addProduct(title, description, price, thumbnail, code, stock, category, status = true) {
+  addProduct({title, description, price, thumbnails = [], code, stock, category, status = true}) {
     let result = 'Ocurrio un error';
-    if (!title || !description || !price || !thumbnail || !code || !stock || !category) {
-      result = 'Todos los parametros son requeridos [title, description, price, thumbnail, code, stock, category]';
+    if (!title || !description || !price || !code || !stock || !category) {
+      result = 'Todos los parametros son requeridos [title, description, price, code, stock, category]';
     } else {
       const codeRepeated = this.products.some(p => p.code == code);
       if (codeRepeated) {
         result = `Codigo ${code} registrado en otro producto`;
       } else {
-        ProductManager.idProduct = ProductManager.idProduct + 1
         const id = this.assignProductId();
         const newProduct = {
           id,
           title,
           description,
           price,
-          thumbnail,
+          thumbnails,
           code,
           stock,
           category, 
@@ -91,7 +95,7 @@ class ProductManager {
     const index = this.products.findIndex(p => p.id === id);
     if (index !== -1) {
       const {id, ...rest} = objectUpdate;
-      const allowedProperties = ['title', 'description', 'price', 'thumbnail', 'code', 'stock', 'category', 'status'];
+      const allowedProperties = ['title', 'description', 'price', 'thumbnails', 'code', 'stock', 'category', 'status'];
       const updatedProperties = Object.keys(this.rest).filter(properties => allowedProperties.includes(properties)).reduce((obj, key) => {
         obj[key] = rest[key];
         return obj
