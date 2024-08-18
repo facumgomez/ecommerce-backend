@@ -1,29 +1,18 @@
 import express from 'express';
 import { Server } from 'socket.io';
 import { engine } from 'express-handlebars';
+import 'dotenv/config';
+
 import productsRouter from './routers/products.router.js';
 import cartsRouter from './routers/carts.router.js';
 import viewsRouter from './routers/views.router.js' 
 import __dirname from './utils.js';
-import ProductManager from './productManager.js';
+import { dbConnection } from './config/config.js';
+import { productModel } from './dao/models/products.model.js';
+import { messageModel } from './dao/models/message.model.js';
 
 const app = express();
-const PORT = 3000;
-
-const p = new ProductManager();
-
-const server = app.listen(PORT, () => { console.log(`Corriendo app en el puerto ${PORT}`);});
-const io = new Server(server);
-io.on('connection', socket => {
-  const products = p.getProducts();
-  socket.emit('products', products);
-
-  socket.on('addProducts', product => {
-    const result = p.addProduct({...product});
-    if (result.producto) 
-      socket.emit('products', result.producto);
-  });
-});
+const PORT =  process.env.PORT;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -36,3 +25,32 @@ app.set('view engine', 'handlebars');
 app.use('/', viewsRouter);
 app.use('/api/products', productsRouter);
 app.use('/api/carts', cartsRouter);
+
+await dbConnection();
+
+const server = app.listen(PORT, () => { console.log(`Corriendo app en el puerto ${PORT}`);});
+const io = new Server(server);
+
+io.on('connection', async (socket) => {
+  const products = await productModel.find();
+  socket.emit('products', products);
+  socket.on('addProducts', async (product) => {
+    const newProduct = await productModel.create({...product});
+    if (newProduct) {
+      products.push(newProduct);
+      socket.emit('products', products);
+    };
+  });
+
+  const messages = await messageModel.find();
+  socket.emit('message', messages);
+
+  socket.on('message', async (data) => {
+    const newMessage = await messageModel.create({...data});
+    if (newMessage) {
+      const messages = await messageModel.find();
+      io.emit('messageLogs', messages);
+    };
+  });
+  socket.broadcast.emit('new_user');
+});

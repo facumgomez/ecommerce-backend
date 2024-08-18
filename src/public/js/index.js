@@ -8,15 +8,15 @@ socket.on('products', products => {
     const row = tbody.insertRow();
 
     row.innerHTML = `
-      <td>${product.id}</td>
+      <td>${product._id}</td>
       <td>${product.title}</td>
       <td>${product.description}</td>
       <td>${product.price}</td>
+      <td>${product.thumbnails && product.thumbnails.length > 0 ? product.thumbnails[0] : 'No hay imagen'}</td>
       <td>${product.code}</td>
       <td>${product.stock}</td>
       <td>${product.category}</td>
       <td>${product.status ? 'Activo' : 'Desactivado'}</td>
-      <td>${product.thumbnails && product.thumbnails.length > 0 ? product.thumbnails[0] : 'No hay imagen'}</td>
     `;
   });
 });
