@@ -8,8 +8,8 @@ import cartsRouter from './routers/carts.router.js';
 import viewsRouter from './routers/views.router.js' 
 import __dirname from './utils.js';
 import { dbConnection } from './config/config.js';
-import { productModel } from './dao/models/products.model.js';
 import { messageModel } from './dao/models/message.model.js';
+import { addProductService, getProductsService } from './services/products.service.js';
 
 const app = express();
 const PORT =  process.env.PORT;
@@ -32,10 +32,11 @@ const server = app.listen(PORT, () => { console.log(`Corriendo app en el puerto 
 const io = new Server(server);
 
 io.on('connection', async (socket) => {
-  const products = await productModel.find();
-  socket.emit('products', products);
+  const { payload } = await getProductsService({});
+  const products = payload;
+  socket.emit('products', payload);
   socket.on('addProducts', async (product) => {
-    const newProduct = await productModel.create({...product});
+    const newProduct = await addProductService({...product});
     if (newProduct) {
       products.push(newProduct);
       socket.emit('products', products);

@@ -1,26 +1,24 @@
 import { request, response } from 'express';
-import { cartModel } from '../dao/models/carts.model.js';
+import { addProductInCartService, createCartService, deleteCartService, deleteProductsInCartService, getCartByIdService, updateProductInCartService } from '../services/carts.service.js';
 
 export const getCartById = async (req = request, res = response) => {
   try {
     const { cid } = req.params;
-    const cart = await cartModel.findById(cid);
+    const cart = await getCartByIdService(cid);
 
     if (cart)
       return res.json({ cart });
     return res.status(404).json({ msg: `El carrito con id ${cid} no existe`});
   } catch (error) {
-    console.log('getCartById -> ', error);
     return res.status(500).json({ msg: 'Hablar con un administrador' });
   };
 };
 
 export const createCart = async (req = request, res = response) => {
   try {
-    const cart = await cartModel.create({});
+    const cart = await createCartService();
     return res.json({ msg: 'Carrito creado', cart});
   } catch (error) {
-    console.log('createCart -> ', error);
     return res.status(500).json({ msg: 'Hablar con un administrador' });
   };
 };
@@ -28,20 +26,55 @@ export const createCart = async (req = request, res = response) => {
 export const addProductInCart = async (req = request, res = response) => {
   try {
     const { cid, pid } = req.params;
-    const cart = await cartModel.findById(cid);
+    const cart = await addProductInCartService(cid, pid);
 
     if (!cart) 
       return res.status(404).json({ msg: `El carrito con id ${cid} no existe`});
-    const productInCart = cart.products.find(p => p.id.toString() === pid);
-
-    if (productInCart) 
-      productInCart.quantity++;
-    else 
-      cart.products.push({ id: pid, quantity: 1});
-    cart.save()
     return res.json({ msg: 'Carrito actualizado!', cart });
   } catch (error) {
-    console.log('addProductInCart -> ', error);
+    return res.status(500).json({ msg: 'Hablar con un administrador' });
+  };
+};
+
+export const deleteProductsInCart = async (req = request, res = response) => {
+  try {
+    const { cid, pid } = req.params;
+    const cart = await deleteProductsInCartService(cid, pid);
+
+    if (!cart) 
+      return res.status(404).json({ msg: 'No se pudo realizar la opercion' });
+    return res.json({ msg: 'Producto eliminado del carrito!', cart });
+  } catch (error) {
+    return res.status(500).json({ msg: 'Hablar con un administrador' });
+  };
+};
+
+export const updateProductInCart  = async (req = request, res = response) => {
+  try {
+    const { cid, pid } = req.params;
+    const { quantity } = req.body;
+
+    if (!quantity || !Number.isInteger(quantity))
+      return res.status(404).json({ msg: 'Propiedad quantity es obligatoria, debe ser un numero entero'});
+
+    const cart = await updateProductInCartService(cid, pid, quantity);
+    if (!cart) 
+      return res.status(404).json({ msg: 'No se pudo realizar la opercion' });
+    return res.json({ msg: 'Producto actualizado en el carrito!', cart });
+  } catch (error) {
+    return res.status(500).json({ msg: 'Hablar con un administrador' });
+  };
+};
+
+export const deleteCart  = async (req = request, res = response) => {
+  try {
+    const { cid } = req.params;
+    const cart = await deleteCartService(cid);
+
+    if (!cart) 
+      return res.status(404).json({ msg: 'No se pudo realizar la opercion' });
+    return res.json({ msg: 'Producto actualizado en el carrito!', cart });
+  } catch (error) {
     return res.status(500).json({ msg: 'Hablar con un administrador' });
   };
 };
