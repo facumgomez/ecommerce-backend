@@ -1,6 +1,8 @@
 import express from 'express';
 import { Server } from 'socket.io';
 import { engine } from 'express-handlebars';
+import session from 'express-session';
+import MongoStore from 'connect-mongo';
 import 'dotenv/config';
 
 import productsRouter from './routers/products.router.js';
@@ -18,6 +20,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
+app.use(session({
+  store: MongoStore.create({
+    mongoUrl: `${process.env.MONGO_URL}/${process.env.NAME_DB}`,
+    ttl: 3600
+  }),
+  secret: process.env.SECRET_SESSION,
+  saveUninitialized: true,
+  resave: false
+}));
+
 app.engine('handlebars', engine());
 app.set('views', __dirname + '/views');
 app.set('view engine', 'handlebars');
@@ -32,7 +44,8 @@ const server = app.listen(PORT, () => { console.log(`Corriendo app en el puerto 
 const io = new Server(server);
 
 io.on('connection', async (socket) => {
-  const { payload } = await getProductsService({});
+  const limit = 50;
+  const { payload } = await getProductsService({limit});
   const products = payload;
   socket.emit('products', payload);
   socket.on('addProducts', async (product) => {
