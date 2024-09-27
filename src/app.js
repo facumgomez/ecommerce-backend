@@ -3,6 +3,7 @@ import { Server } from 'socket.io';
 import { engine } from 'express-handlebars';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
+import passport from 'passport';
 import 'dotenv/config';
 
 import productsRouter from './routers/products.router.js';
@@ -12,6 +13,7 @@ import __dirname from './utils.js';
 import { dbConnection } from './config/config.js';
 import { messageModel } from './dao/models/message.model.js';
 import { addProductService, getProductsService } from './services/products.service.js';
+import { initializaPassport } from './config/passport.js';
 
 const app = express();
 const PORT =  process.env.PORT;
@@ -29,6 +31,10 @@ app.use(session({
   saveUninitialized: true,
   resave: false
 }));
+
+initializaPassport();
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.engine('handlebars', engine());
 app.set('views', __dirname + '/views');
